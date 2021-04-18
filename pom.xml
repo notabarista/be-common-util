@@ -133,4 +133,12 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>Notabarista Github Packages</name>
+            <url>https://maven.pkg.github.com/notabarista/be-common-util</url>
+        </repository>
+    </distributionManagement>
 </project>
