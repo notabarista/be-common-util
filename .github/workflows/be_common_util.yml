@@ -30,9 +30,11 @@ jobs:
          architecture: x64
          
       - name: Build with maven
-        run: mvn dependency:tree clean install
-      - run: mkdir staging && cp target/*.jar staging
-      - uses: actions/upload-artifact@v2
-        with:
-          name: common-util
-          path: staging
+        run: ls .
+      - name: List files
+        run: mvn --settings settings.xml -X dependency:tree clean install deploy
+      - name: Deploy artifacts
+        env:
+          GITHUB_USERNAME: notabarista
+          CI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn deploy
