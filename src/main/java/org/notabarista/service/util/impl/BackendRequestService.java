@@ -1,8 +1,6 @@
 package org.notabarista.service.util.impl;
 
-import java.net.URI;
-import java.util.List;
-
+import lombok.extern.log4j.Log4j2;
 import org.notabarista.entity.response.Response;
 import org.notabarista.exception.AbstractNotabaristaException;
 import org.notabarista.exception.MicroserviceNotFoundException;
@@ -21,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
-import lombok.extern.log4j.Log4j2;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Log4j2
@@ -51,48 +51,48 @@ public class BackendRequestService implements IBackendRequestService {
 
 	@Override
 	public <T> Response<T> executePost(MicroService microService, String uri, Object object,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) throws AbstractNotabaristaException {
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) throws AbstractNotabaristaException {
 
 		URI serviceUri = this.getServiceUri(microService.getMicroserviceName());
 		String resourcePath = serviceUri.toString() + uri;
-		return executeRequest(resourcePath, object, HttpMethod.POST, parameterizedTypeReference);
+		return executeRequest(resourcePath, object, HttpMethod.POST, parameterizedTypeReference, customHeaders);
 	}
 
 	@Override
 	public <T> Response<T> executeGet(MicroService microService, String uri, Object object,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) throws AbstractNotabaristaException {
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) throws AbstractNotabaristaException {
 
 		URI serviceUri = this.getServiceUri(microService.getMicroserviceName());
 		String resourcePath = serviceUri.toString() + uri;
-		return executeRequest(resourcePath, object, HttpMethod.GET, parameterizedTypeReference);
+		return executeRequest(resourcePath, object, HttpMethod.GET, parameterizedTypeReference, customHeaders);
 	}
 	
 	@Override
 	public <T> Response<T> executePut(MicroService microService, String uri, Object object,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) throws AbstractNotabaristaException {
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) throws AbstractNotabaristaException {
 
 		URI serviceUri = this.getServiceUri(microService.getMicroserviceName());
 		String resourcePath = serviceUri.toString() + uri;
-		return executeRequest(resourcePath, object, HttpMethod.PUT, parameterizedTypeReference);
+		return executeRequest(resourcePath, object, HttpMethod.PUT, parameterizedTypeReference, customHeaders);
 	}
 	
 	@Override
 	public <T> Response<T> executePatch(MicroService microService, String uri, Object object,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) throws AbstractNotabaristaException {
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) throws AbstractNotabaristaException {
 
 		URI serviceUri = this.getServiceUri(microService.getMicroserviceName());
 		String resourcePath = serviceUri.toString() + uri;
-		return executeRequest(resourcePath, object, HttpMethod.PATCH, parameterizedTypeReference);
+		return executeRequest(resourcePath, object, HttpMethod.PATCH, parameterizedTypeReference, customHeaders);
 	}
 
 	@Override
 	public <T> Response<T> executeRequest(String uri, HttpMethod httpMethod, Object object,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) {
-		return executeRequest(uri, object, httpMethod, parameterizedTypeReference);
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) {
+		return executeRequest(uri, object, httpMethod, parameterizedTypeReference, customHeaders);
 	}
 
 	private <T extends Object> Response<T> executeRequest(String uri, Object object, HttpMethod httpMethod,
-			ParameterizedTypeReference<Response<T>> parameterizedTypeReference) {
+			ParameterizedTypeReference<Response<T>> parameterizedTypeReference, Map<String, String> customHeaders) {
 
 		if (log.isDebugEnabled()) {
 			log.debug("Resource path: " + uri);
@@ -101,6 +101,9 @@ public class BackendRequestService implements IBackendRequestService {
 			RestTemplate restTemplate = new RestTemplate();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
+			if (!CollectionUtils.isEmpty(customHeaders)) {
+				customHeaders.forEach((k, v) -> headers.add(k, v));
+			}
 
 			ResponseEntity<Response<T>> response = null;
 
@@ -108,7 +111,8 @@ public class BackendRequestService implements IBackendRequestService {
 				HttpEntity<Object> httpEntity = new HttpEntity<Object>(object, headers);
 				response = restTemplate.exchange(uri, httpMethod, httpEntity, parameterizedTypeReference);
 			} else {
-				response = restTemplate.exchange(uri, httpMethod, null, parameterizedTypeReference);
+				HttpEntity<Object> emptyHttpEntity = new HttpEntity<Object>(null, headers);
+				response = restTemplate.exchange(uri, httpMethod, emptyHttpEntity, parameterizedTypeReference);
 			}
 
 			if (log.isDebugEnabled()) {
